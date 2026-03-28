@@ -1,66 +1,53 @@
 ﻿using Microsoft.Data.SqlClient;
 
-// Server နာမည်နေရာမှာ မင်းရဲ့ Computer Name\SQLEXPRESS ကို အစားထိုးဖို့ မမေ့ပါနဲ့
-string connectionString = "Server=localhost\\QLEXPRESS;Database=master;Trusted_Connection=True;";
+// @ လေးခံထားရင် \ တစ်ခုပဲ သုံးလို့ရပါတယ်
+// Server= နေရာမှာ SSMS က ကူးလာတဲ့ နာမည်ကို သေချာထည့်ပါ
+string connectionString = @"Server=localhost\SQLEXPRESS;Database=InventoryDB;Trusted_Connection=True;TrustServerCertificate=True;";
 
 while (true)
 {
     Console.WriteLine("\n--- Inventory Management System ---");
     Console.WriteLine("1. Add  2. View  3. Update Price  4. Delete  0. Exit");
     Console.Write("ရွေးချယ်ရန်: ");
-    string choice = Console.ReadLine();
+    string? choice = Console.ReadLine();
 
-    using (SqlConnection conn = new SqlConnection(connectionString))
+    try 
     {
-        conn.Open();
-        if (choice == "1") // ADD
+        using (SqlConnection conn = new SqlConnection(connectionString))
         {
-            Console.Write("Name: "); string name = Console.ReadLine();
-            Console.Write("Price: "); decimal price = decimal.Parse(Console.ReadLine());
-            Console.Write("Qty: "); int qty = int.Parse(Console.ReadLine());
-
-            string query = "INSERT INTO Products (Name, Price, Quantity) VALUES (@name, @price, @qty)";
-            SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@price", price);
-            cmd.Parameters.AddWithValue("@qty", qty);
-            cmd.ExecuteNonQuery();
-            Console.WriteLine("အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။");
-        }
-        else if (choice == "2") // VIEW
-        {
-            string query = "SELECT * FROM Products";
-            SqlCommand cmd = new SqlCommand(query, conn);
-            using (SqlDataReader reader = cmd.ExecuteReader())
+            conn.Open();
+            if (choice == "1")
             {
-                Console.WriteLine("\nID | Name | Price | Qty");
-                while (reader.Read())
+                Console.Write("Name: "); string name = Console.ReadLine() ?? "";
+                Console.Write("Price: "); decimal price = decimal.Parse(Console.ReadLine() ?? "0");
+                Console.Write("Qty: "); int qty = int.Parse(Console.ReadLine() ?? "0");
+
+                string query = "INSERT INTO Products (Name, Price, Quantity) VALUES (@name, @price, @qty)";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@price", price);
+                cmd.Parameters.AddWithValue("@qty", qty);
+                cmd.ExecuteNonQuery();
+                Console.WriteLine("အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။");
+            }
+            else if (choice == "2")
+            {
+                string query = "SELECT * FROM Products";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    Console.WriteLine($"{reader["Id"]} | {reader["Name"]} | {reader["Price"]} | {reader["Quantity"]}");
+                    Console.WriteLine("\nID | Name | Price | Qty");
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"{reader["Id"]} | {reader["Name"]} | {reader["Price"]} | {reader["Quantity"]}");
+                    }
                 }
             }
+            else if (choice == "0") break;
         }
-        else if (choice == "3") // UPDATE
-        {
-            Console.Write("ပြင်မည့် ပစ္စည်း ID ကိုရိုက်ပါ: "); int id = int.Parse(Console.ReadLine());
-            Console.Write("စျေးနှုန်းအသစ်: "); decimal newPrice = decimal.Parse(Console.ReadLine());
-
-            string query = "UPDATE Products SET Price = @price WHERE Id = @id";
-            SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@price", newPrice);
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-            Console.WriteLine("စျေးနှုန်း ပြင်ဆင်ပြီးပါပြီ။");
-        }
-        else if (choice == "4") // DELETE
-        {
-            Console.Write("ဖျက်မည့် ပစ္စည်း ID ကိုရိုက်ပါ: "); int id = int.Parse(Console.ReadLine());
-            string query = "DELETE FROM Products WHERE Id = @id";
-            SqlCommand cmd = new SqlCommand(query, conn);
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-            Console.WriteLine("ဖျက်သိမ်းပြီးပါပြီ။");
-        }
-        else if (choice == "0") break;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error တက်သွားပါတယ်: {ex.Message}");
     }
 }
